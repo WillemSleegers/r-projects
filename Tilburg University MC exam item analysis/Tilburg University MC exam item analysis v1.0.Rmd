@@ -1,0 +1,176 @@
+---
+title: "Tilburg University MC exam item analysis example"
+author: "Willem Sleegers"
+date: "April 12th, 2017"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+# Load packages
+library(tidyverse) # For a better R
+library(stringr)   # From some text manipulation
+library(openxlsx)  # To read in Excel files
+library(psych)     # For item analysis
+library(knitr)     # For tables
+
+# Load student' individual exam answers
+data <- read.xlsx("./Raw scores.xlsx")
+```
+
+```{r data preparation, echo = FALSE, warning = FALSE}
+
+# Replace variable names with the second row of data
+names(data) <- as.character(data[2, ])
+
+# Remove the first two rows of data
+data <- data[3:nrow(data), ]
+
+# Rename the Stud_nr variable
+data <- rename(data, SNR = Stud_nr)
+
+# Replace all ABCDs with 1234s
+data %>%
+    gather("item", "response", -SNR) %>%
+    arrange(SNR) %>%
+    mutate(response = recode(response, "A" = 1, "B" = 2, "C" = 3, "D" = 4)) %>%
+    spread(item, response) -> data
+
+# Get answer key, which is the first row of the raw scores, and remove these from the raw scores data frame
+answers <- as.numeric(filter(data, SNR == "0000000")[2:ncol(data)])
+data <- filter(data, SNR != "0000000")
+```
+
+```{r perform item analysis, echo = FALSE, warning = FALSE}
+
+# Perform an item analysis using the score.multiple.choice() function from the psych package and turn the relevant output into a data frame
+results <- score.multiple.choice(key = answers, data = select(data, -SNR), missing = FALSE)
+item_stats <- as_data_frame(results[1]$item.stats)
+
+# Create an item variable indicating which results belong to which question of the exam
+item_stats$item <- as.numeric(str_replace(row.names(item_stats), "V", ""))
+
+# Replace missing values in r with 0 (this is the result of all students answering that question correctly or incorrectly)
+item_stats$r <- if_else(is.na(item_stats$r), 0, item_stats$r)
+
+# Multiply r, mean, and sd by 100 so that it is consistent with the standard item analysis provided by the exam department of Tilburg University
+item_stats$r <- item_stats$r * 100
+item_stats$mean <- item_stats$mean * 100
+item_stats$sd <- item_stats$sd * 100
+
+# Sort the item analysis results
+item_stats <- arrange(item_stats, item)
+item_stats <- select(item_stats, item, key, `1`, `2`, `3`, `4`, r, n, mean, sd)
+```
+
+## Exam description
+
+The exam consisted of 50 questions with 4 possible answers, of which 1 is the correct answer.
+
+## Reliability
+
+The exam has a reliability of `r results[[2]]`.
+
+## Difficulty of each item
+
+```{r plot item difficulty, echo = FALSE, fig.height = 4, fig.width = 8}
+ggplot(item_stats, aes(x = item, y = mean)) + geom_bar(stat = "identity", fill = "lightgray", color = "black") + labs(x = "Item", y = "Percentage correct")
+```
+
+Questions that were answered *correctly* by all students: `r if (sum(which(item_stats$mean == 100)) == 0) {"None"} else {which(item_stats$mean == 100)}`.
+
+Questions that were answered *incorrectly* by all students: `r if (sum(which(item_stats$mean == 0)) == 0) {"None"} else {which(item_stats$mean == 0)}`.
+
+\pagebreak
+
+## Item analysis
+
+```{r plot item analysis , echo = FALSE}
+kable(item_stats)
+```
+
+\pagebreak
+
+## RIT scores
+
+```{r plot RIT scores, echo = FALSE, fig.height = 4, fig.width = 8}
+ggplot(item_stats, aes(x = item, y = r)) + geom_bar(stat = "identity", fill = "lightgray", color = "black") + labs(x = "Item", y = "RIT")
+```
+
+Questions with a negative RIT score: `r if (sum(which(item_stats$r < 0)) == 0) {"None"} else {which(item_stats$r < 0)}`.
+
+Questions with a RIT score between 0 and 10: `r if (sum(which(item_stats$r >= 0 & item_stats$r <= 10)) == 0) {"None"} else {which(item_stats$r >= 0 & item_stats$r <= 10)}`.
+
+\pagebreak
+
+## Grades
+
+```{r calculate grades, include=FALSE}
+
+# Make the data long so each row represents a student's answer to one of the exam questions
+data %>%
+    gather("item", "response", -SNR) %>%
+    arrange(SNR) -> data_long
+
+# Add the correct answer
+data_long$answer <- rep(answers, times = nrow(data))
+
+# Calculate whether the student's answer is the correct answer
+data_long$correct <- if_else(data_long$response == data_long$answer, 1, 0)
+
+# If we had bad questions (based on the item analysis and student feedback), this is the moment to indicate for all students that they correctly answered that question (at least, that's one way to deal with it)
+# For example:
+# data_long$correct <- if_else(data_long$item == "VXX", 1, data_long$correct)
+
+# Calculate number of correct answers per student
+data_long %>%
+    group_by(SNR) %>%
+    summarise(score = sum(correct, na.rm = TRUE)) -> scores
+
+# Calculate the grades
+
+# Using the standard chance correction formula:
+
+# Calculate norm to pass the exam, using the standard chance correction formula: 10*(X-pN)/(N-pN)
+# X = number of correct answers
+# p = chance of guessing the correct answer
+# N = number of questions
+p <- 1/length(table(answers))
+N <- length(answers)
+scores$grade <- 10*(scores$score-p*N)/(N-p*N)
+
+# Round the grades
+# First set all grades below 1 to 1
+scores$grade_rounded <- if_else(scores$grade < 1, 1, scores$grade)
+
+# Round the grades to the nearest half
+scores$grade_rounded = round(scores$grade_rounded * 2)/2
+
+# If the grade is between 5 and 5.5, set it to 5
+scores$grade_rounded = if_else(scores$grade_rounded < 5.5 & scores$grade_rounded > 5, 5, scores$grade_rounded)
+
+# If the grade is a 5.5, set it to 6
+scores$grade_rounded = if_else(scores$grade_rounded == 5.5, 6, scores$grade_rounded)
+```
+
+The average grade is `r round(mean(scores$grade_rounded), 2)` (*SD* = `r round(sd(scores$grade_rounded), 2)`). The pass rate is `r round(sum(scores$grade_rounded >= 6)/nrow(scores)*100)`%.
+
+```{r plot grades, echo = FALSE, fig.height = 3, fig.width = 5, fig.align = "center"}
+# Plot grade 
+scores %>%
+    group_by(grade_rounded) %>%
+    summarise(n = n()) %>%
+    ggplot(aes(x = grade_rounded, y = n)) + geom_bar(stat = "identity", color = "black", fill = "lightgray") + scale_x_continuous(breaks = 1:10) + labs(x = "Grade", y = "N")
+```
+
+```{r write grades file, echo = FALSE, warning = FALSE}
+# Rename the 'grade_rounded' variable to a more human-friendly name
+scores <- rename(scores, "grade (rounded)" = grade_rounded)
+
+# Write the grades to a file
+# write.xlsx(grades, "./grades.xlsx")
+# write_tsv(grades, "./grades.txt")
+```
