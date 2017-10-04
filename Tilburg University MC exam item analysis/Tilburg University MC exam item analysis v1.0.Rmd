@@ -3,8 +3,8 @@ title: "Tilburg University MC exam item analysis example"
 author: "Willem Sleegers"
 date: "April 12th, 2017"
 output:
-  pdf_document: default
   html_document: default
+  pdf_document: default
 ---
 
 ```{r setup, include = FALSE}
