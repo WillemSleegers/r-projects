@@ -1,0 +1,55 @@
+---
+title: "Poster title: Insert your amazing title here"
+author: "Author (or authors)"
+output:
+  html_document:
+    css: style.css
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Background
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+| Background 1 | Background 2 |
+|---------|-------------|
+|    This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:     | This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:            |
+
+# Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE, fig.width = 4, fig.height = 3}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+# Results
+
+```{r cars}
+summary(cars)
+```
+
+# Results
+
+```{r cars2}
+summary(cars)
+```
+
+# References
+
+Sleegers, W. W. A., Proulx, T., & van Beest, I. (2016). The social pain of Cyberball: Decreased pupillary reactivity to exclusion cues. Journal of Experimental Social Psychology, 69, 187–200. https://doi.org/10.1016/j.jesp.2016.08.004
+
+Sleegers, W. W. A., Proulx, T., & van Beest, I. (2015). Extremism reduces conflict arousal and increases values affirmation in response to meaning violations. Biological Psychology, 108, 126–131. https://doi.org/10.1016/j.biopsycho.2015.03.012
+
+Sleegers, W. W. A., & Proulx, T. (2015). The comfort of approach: Self-soothing effects of behavioral approach in response to meaning violations. Frontiers in Psychology, 5, 1–10. https://doi.org/10.3389/fpsyg.2014.01568

@@ -1,0 +1,20 @@
+<script src="packery.pkgd.min.js"></script>
+<script src="draggabilly.pkgd.min.js"></script>
+
+<script type="text/javascript">
+	
+
+	// if you have multiple .draggable elements
+	// get all draggie elements
+	var draggableElems = document.querySelectorAll('.section');
+	// array of Draggabillies
+	var draggies = []
+	// init Draggabillies
+	for ( var i=0, len = draggableElems.length; i < len; i++ ) {
+	  var draggableElem = draggableElems[i];
+	  var draggie = new Draggabilly( draggableElem, {
+	    // options...
+	  });
+	  draggies.push( draggie );
+	}
+</script>
